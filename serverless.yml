@@ -33,7 +33,7 @@ functions:
     events:
       - http:
           path: /transaccion/obtener
-          method: get
+          method: post
           cors: true
 
   ListarTransacciones:
@@ -41,7 +41,7 @@ functions:
     events:
       - http:
           path: /transaccion/listar
-          method: get
+          method: post
           cors: true
 
 resources:
