@@ -1,11 +1,16 @@
 # TABLA-TRANSACCION
-Aquí tienes los JSON de cada caso para probar en Postman. Estos ejemplos incluyen información de usuario_id, cuenta_origen, y cuenta_destino. 
+Aquí tienes los JSON para cada caso en la tabla **Transacción** de DynamoDB, basados en los requisitos que has especificado:
 
-### 1. Crear Transacción (POST)
+---
+
+### 1. **POST - Crear Transacción**
+
+Endpoint: `/transaccion/crear`
 
 Este JSON crea una transacción, asegurando que ambas cuentas (origen y destino) existen y están asociadas con usuarios válidos.
 
-json
+#### Request JSON:
+```json
 {
   "usuario_origen": "user123",
   "cuenta_origen": "account12345",
@@ -13,57 +18,141 @@ json
   "cuenta_destino": "account67890",
   "monto": 1000
 }
+```
 
+#### Expected Response JSON (Success):
+```json
+{
+  "usuario_origen": "user123",
+  "cuenta_origen": "account12345",
+  "usuario_destino": "user456",
+  "cuenta_destino": "account67890",
+  "transaccion_id": "generated-uuid",
+  "monto": 1000,
+  "fecha_transaccion": "2024-11-13T12:00:00Z",
+  "estado": "completada"
+}
+```
 
-### 2. Eliminar Transacción (DELETE)
+---
 
-Este JSON elimina una transacción específica. Necesitas el usuario_origen, cuenta_origen, y el transaccion_id para identificar la transacción que deseas eliminar.
+### 2. **DELETE - Eliminar Transacción**
 
-json
+Endpoint: `/transaccion/eliminar`
+
+Este JSON elimina una transacción específica. Necesitas el `usuario_origen`, `cuenta_origen`, y el `transaccion_id` para identificar la transacción que deseas eliminar.
+
+#### Request JSON:
+```json
 {
   "usuario_origen": "user123",
   "cuenta_origen": "account12345",
   "transaccion_id": "uuid-transaccion-1"
 }
+```
 
+#### Expected Response JSON (Success):
+```json
+{
+  "statusCode": 200,
+  "body": "Transacción uuid-transaccion-1 eliminada con éxito"
+}
+```
 
-### 3. Obtener Transacción (GET)
+---
 
-Este JSON obtiene los detalles de una transacción específica usando el usuario_origen, cuenta_origen, y transaccion_id.
+### 3. **GET - Obtener Transacción**
 
-json
+Endpoint: `/transaccion/obtener`
+
+Este JSON obtiene los detalles de una transacción específica usando el `usuario_origen`, `cuenta_origen`, y `transaccion_id`.
+
+#### Request JSON:
+```json
 {
   "usuario_origen": "user123",
   "cuenta_origen": "account12345",
   "transaccion_id": "uuid-transaccion-1"
 }
+```
 
+#### Expected Response JSON (If the transaction exists):
+```json
+{
+  "usuario_origen": "user123",
+  "cuenta_origen": "account12345",
+  "usuario_destino": "user456",
+  "cuenta_destino": "account67890",
+  "transaccion_id": "uuid-transaccion-1",
+  "monto": 1000,
+  "fecha_transaccion": "2024-11-13T12:00:00Z",
+  "estado": "completada"
+}
+```
 
-### 4. Listar Transacciones (GET)
+#### Expected Response JSON (If the transaction does not exist):
+```json
+{
+  "statusCode": 404,
+  "body": "Transacción no encontrada"
+}
+```
 
-Este JSON lista todas las transacciones de una cuenta específica para un usuario. Necesitas el usuario_origen y cuenta_origen.
+---
 
-json
+### 4. **GET - Listar Transacciones**
+
+Endpoint: `/transaccion/listar`
+
+Este JSON lista todas las transacciones de una cuenta específica para un usuario. Necesitas el `usuario_origen` y `cuenta_origen`.
+
+#### Request JSON:
+```json
 {
   "usuario_origen": "user123",
   "cuenta_origen": "account12345"
 }
+```
 
+#### Expected Response JSON:
+```json
+[
+  {
+    "usuario_origen": "user123",
+    "cuenta_origen": "account12345",
+    "usuario_destino": "user456",
+    "cuenta_destino": "account67890",
+    "transaccion_id": "uuid-transaccion-1",
+    "monto": 500,
+    "fecha_transaccion": "2024-11-13T10:00:00Z",
+    "estado": "completada"
+  },
+  {
+    "usuario_origen": "user123",
+    "cuenta_origen": "account12345",
+    "usuario_destino": "user789",
+    "cuenta_destino": "account54321",
+    "transaccion_id": "uuid-transaccion-2",
+    "monto": 750,
+    "fecha_transaccion": "2024-11-13T11:00:00Z",
+    "estado": "completada"
+  }
+]
+```
 
-### Explicación de Cada JSON y Su Relación con la Tabla de Cuentas y Usuarios
+---
 
-1. *usuario_origen* y *usuario_destino*: Representan el usuario_id del usuario propietario de cada cuenta, asegurando que la cuenta esté vinculada a un usuario válido.
-2. *cuenta_origen* y *cuenta_destino*: Representan el cuenta_id asociado a cada usuario_id.
-3. *transaccion_id*: Es el identificador único de cada transacción (en el caso de obtener o eliminar una transacción específica).
-4. *monto*: La cantidad de dinero que se transfiere en la transacción.
+### Explicación de los Campos
 
-### Uso de estos JSON en las Funciones Lambda
+- **usuario_origen**: Representa el `usuario_id` del usuario que inicia la transacción desde su cuenta.
+- **cuenta_origen**: Representa el `cuenta_id` asociado al `usuario_origen`, desde el cual se deduce el monto.
+- **usuario_destino**: Representa el `usuario_id` del destinatario de la transacción.
+- **cuenta_destino**: Representa el `cuenta_id` del destinatario de la transacción.
+- **transaccion_id**: Es el identificador único de cada transacción (en el caso de obtener o eliminar una transacción específica).
+- **monto**: La cantidad de dinero que se transfiere en la transacción.
+- **fecha_transaccion**: Fecha y hora de la transacción, en formato ISO 8601.
+- **estado**: Indica si la transacción fue `completada`, `pendiente`, o `fallida`.
 
-Cada función Lambda verificará que:
+---
 
-- *Crear Transacción*: Ambas cuentas (cuenta_origen y cuenta_destino) existen en la tabla de cuentas y están vinculadas a usuarios válidos (usuario_origen y usuario_destino). Además, verifica que el saldo en la cuenta_origen sea suficiente para cubrir el monto.
-- *Eliminar Transacción*: La transacción especificada por el transaccion_id y cuenta_origen existe y pertenece al usuario_origen antes de eliminarla.
-- *Obtener Transacción*: La función buscará la transacción especificada por el transaccion_id en la cuenta_origen del usuario_origen.
-- *Listar Transacciones*: Listará todas las transacciones asociadas con la cuenta_origen del usuario_origen.
-
-Esto asegura que las transacciones están correctamente asociadas con los usuarios y sus respectivas cuentas.
+Estos JSON ejemplos son adecuados para cada una de tus funciones Lambda y deberían ayudarte a realizar pruebas detalladas de cada caso en Postman.
