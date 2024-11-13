@@ -1,4 +1,4 @@
-# TABLA-PAGOS
+# TABLA-TRANSACCION
 Aquí tienes los JSON de cada caso para probar en Postman. Estos ejemplos incluyen información de usuario_id, cuenta_origen, y cuenta_destino. 
 
 ### 1. Crear Transacción (POST)
